@@ -1,6 +1,6 @@
 # jalapeno
 
-An excapade into the realm of FRP - trying to design my own FRP network designed
+An escapade into the realm of FRP - trying to design my own FRP network designed
 around video game development. It is the spiritual successor to my library
 [Spice](http://github.com/crockeo/spice).
 
@@ -12,9 +12,7 @@ to install it directly:
 ```bash
 $ git clone http://github.com/crockeo/jalapeno.git
 $ cd jalapeno
-$ cabal sandbox init
-$ cabal install --only-dependencies
-$ cabal sdist
+$ cabal install
 ```
 
 And then use `cabal` to install directly from the source distribution.
