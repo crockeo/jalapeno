@@ -1,5 +1,5 @@
 -- | The module containing information on the @'Behavior'@ type.
-module Behavior where
+module FRP.Jalapeno.Behavior where
 
 -------------
 -- Imports --

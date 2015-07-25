@@ -1,10 +1,10 @@
-module Sample where
+module FRP.Jalapeno.Sample where
 
 -------------
 -- Imports --
 import Data.Time.Clock
 
-import Behavior
+import FRP.Jalapeno.Behavior
 
 ----------
 -- Code --

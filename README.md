@@ -1,7 +1,8 @@
 # jalapeno
 
 An excapade into the realm of FRP - trying to design my own FRP network designed
-around video game development.
+around video game development. It is the spiritual successor to my library
+[Spice](http://github.com/crockeo/spice).
 
 ### Installation
 

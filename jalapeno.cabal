@@ -13,8 +13,8 @@ build-type:          Simple
 cabal-version:       >=1.10
 
 library
-  exposed-modules:     Behavior
-                 ,     Sample
+  exposed-modules:     FRP.Jalapeno.Behavior
+                 ,     FRP.Jalapeno.Sample
 
   build-depends:       base >= 4.6 && < 4.8
                ,       time == 1.4.2
