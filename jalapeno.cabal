@@ -16,8 +16,9 @@ library
   exposed-modules:     FRP.Jalapeno.Behavior
                  ,     FRP.Jalapeno.Sample
 
-  build-depends:       base >= 4.6 && < 4.8
-               ,       time == 1.4.2
+  build-depends:       base         >= 4.6 && < 4.8
+               ,       time         == 1.4.2
+               ,       transformers == 0.3.0.0
 
   hs-source-dirs:      src/
 
