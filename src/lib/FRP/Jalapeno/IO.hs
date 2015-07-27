@@ -17,10 +17,6 @@ import FRP.Jalapeno.Sample
 ----------
 -- Code --
 
--- | Checking whether or not a key is pressed.
-keyPressed :: Enum a => a -> Behavior Bool
-keyPressed = liftIO . fmap (== Press) . getKey
-
 -- | This function runs when GLFW wants to be closed - writing true to the
 --   closed @'IORef'@.
 closeCallback :: IORef Bool -> WindowCloseCallback
@@ -29,12 +25,12 @@ closeCallback closedRef = do
   return True
 
 -- | Running a given FRP network from some @'Behavior'@.
-runNetwork :: Show a => IORef Bool -> Behavior a -> Int -> IO ()
-runNetwork closedRef b rate = do
+driveNetwork :: Show a => IORef Bool -> Behavior a -> Int -> IO ()
+driveNetwork closedRef b rate = do
   ct <- getCurrentTime
-  runNetwork' ct 0 closedRef b rate
-  where runNetwork' :: Show a => UTCTime -> Double -> IORef Bool -> Behavior a -> Int -> IO ()
-        runNetwork' lt t closedRef b@(Behavior fn) rate = do
+  driveNetwork' ct 0 closedRef b rate
+  where driveNetwork' :: Show a => UTCTime -> Double -> IORef Bool -> Behavior a -> Int -> IO ()
+        driveNetwork' lt t closedRef b@(Behavior fn) rate = do
           closed <- readIORef closedRef
           case closed of
             True  -> return ()
@@ -48,15 +44,16 @@ runNetwork closedRef b rate = do
               threadDelay $ 1000000 `div` rate
 
               ct <- getCurrentTime
-              runNetwork' ct
+              driveNetwork' ct
                           (t + (fromRational $ toRational $ diffUTCTime ct lt))
                           closedRef
                           b
                           rate
 
--- | Performing some tests around GLFW and Jalapeno's FRP.
-testNetwork :: IO ()
-testNetwork = do
+-- | Running a given behavior at a given rate (after having constructed a GLFW
+--   instance).
+runNetwork :: Show a => Behavior a -> Int -> IO ()
+runNetwork b rate = do
   succ <- initialize
 
   case succ of
@@ -71,7 +68,7 @@ testNetwork = do
       windowTitle         $= "Testing Jalapeno"
       windowCloseCallback $= closeCallback closedRef
 
-      runNetwork closedRef (keyPressed $ CharKey 'W') 20
+      driveNetwork closedRef b rate
 
       closeWindow
       terminate
