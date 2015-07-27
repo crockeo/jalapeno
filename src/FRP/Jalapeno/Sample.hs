@@ -32,4 +32,4 @@ intermittentSample b rate = do
 
 -- | Sampling a @'Behavior'@ at around 100 samples per second.
 sample :: Show a => Behavior a -> IO ()
-sample b = intermittentSample b 2
+sample b = intermittentSample b 60

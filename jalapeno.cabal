@@ -10,13 +10,15 @@ maintainer:          cerekh@gmail.om
 copyright:           (C) 2015
 category:            FRP
 build-type:          Simple
-cabal-version:       >=1.10
+cabal-version:       >= 1.10
 
 library
   exposed-modules:     FRP.Jalapeno.Behavior
+                 ,     FRP.Jalapeno.IO
                  ,     FRP.Jalapeno.Sample
 
   build-depends:       base         >= 4.6 && < 4.8
+               ,       GLFW         == 0.5.2.2
                ,       time         == 1.4.2
                ,       transformers == 0.3.0.0
 
