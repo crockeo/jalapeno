@@ -34,6 +34,13 @@ acceleration = undefined
 position :: Behavior (Float, Float)
 position = undefined
 
+-- | A @'Behavior'@ to test the properties of @'integral'@ (to make sure it
+--   works properly).
+tspeed :: Behavior Double
+tspeed = fmap (\pressed -> case pressed of
+                             True  -> 20
+                             False -> 0) $ keyPressed (CharKey 'W')
+
 -- | The entry point to the application.
 main :: IO ()
-main = runNetwork speed 20
+main = runNetwork (tspeed >>= integral 20) -- runNetwork speed 20

@@ -65,3 +65,9 @@ behavior fn = Behavior $ return . fn
 -- | Getting the amount of seconds that have passed.
 seconds :: Behavior Int
 seconds = behavior floor
+
+-- | Taking the integral of a @'Fractional'@ value over time, contained inside
+--   of a @'Behavior'@.
+integral :: Double -> Behavior Double
+integral n =
+  Behavior $ \t -> return (n * t)
