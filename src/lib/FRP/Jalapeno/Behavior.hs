@@ -68,6 +68,7 @@ seconds = behavior floor
 
 -- | Taking the integral of a @'Fractional'@ value over time, contained inside
 --   of a @'Behavior'@.
-integral :: Double -> Behavior Double
+integral :: Real a => a -> Behavior Double
 integral n =
-  Behavior $ \t -> return (n * t)
+  Behavior $ \t ->
+    return (realToFrac n * t)
