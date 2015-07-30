@@ -92,5 +92,5 @@ seconds = BehaviorP floor
 --   of a @'Behavior'@.
 integral :: (Monad m, Real a) => a -> Behavior m Double
 integral n =
-  BehaviorM $ \t ->
-    return (realToFrac n * t)
+  BehaviorP $ \t ->
+    realToFrac n * t
