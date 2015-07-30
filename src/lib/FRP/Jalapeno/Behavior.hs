@@ -14,61 +14,75 @@ import Data.Monoid
 type Time = Double
 
 -- | A continuous behavior along a stream of time.
-data Behavior a = Behavior (Time -> IO a)
+data Behavior m a = BehaviorM (Time -> m a)
+                  | BehaviorP (Time ->   a)
 
-instance Functor Behavior where
-  fmap fn (Behavior a) = Behavior $ \t -> fmap fn (a t)
+instance Functor m => Functor (Behavior m) where
+  fmap fn (BehaviorM a) = BehaviorM $ \t -> fmap fn (a t)
+  fmap fn (BehaviorP a) = BehaviorP $ \t ->      fn (a t)
 
-instance Applicative Behavior where
-  pure a = Behavior $ \_ -> return a
+instance Applicative m => Applicative (Behavior m) where
+  pure a = BehaviorP $ \_ -> a
 
-  (Behavior fn) <*> (Behavior a) =
-    Behavior $ \t -> do
-      fnv <- fn t
-      av  <- a  t
+  (BehaviorM fn) <*> (BehaviorM a) =
+    BehaviorM $ \t ->
+      fn t <*> a t
 
-      return $ fnv av
+  (BehaviorP fn) <*> (BehaviorP a) =
+    BehaviorP $ \t ->
+      fn t (a t)
 
-instance Monad Behavior where
-  return = pure
+instance Monad m => Monad (Behavior m) where
+  return a = BehaviorP $ \_ -> a
 
-  (Behavior a) >>= fn =
-    Behavior $ \t -> do
+  (BehaviorM a) >>= fn =
+    BehaviorM $ \t -> do
       av <- a t
       case fn av of
-        (Behavior b) -> b t
+        (BehaviorM b) ->          b t
+        (BehaviorP b) -> return $ b t
 
-instance MonadIO Behavior where
-  liftIO a = Behavior $ \t -> a
+  (BehaviorP a) >>= fn =
+    BehaviorM $ \t -> do
+      case fn $ a t of
+        (BehaviorM b) -> undefined
+        (BehaviorP b) -> undefined
+
+
+instance MonadIO m => MonadIO (Behavior m) where
+  liftIO a = BehaviorM $ \t -> liftIO a
 
 -- | The @'Num'@ instance is really just a bunch of the appropriate function
 --   applications to the @'Applicative'@ instance.
-instance Num a => Num (Behavior a) where
-  ba + bb = (+) <$> ba <*> bb
-  ba * bb = (*) <$> ba <*> bb
-  abs b = abs <$> b
-  signum b = signum <$> b
+instance (Applicative m, Num a) => Num (Behavior m a) where
+  ba + bb     = (+) <$> ba <*> bb
+  ba * bb     = (*) <$> ba <*> bb
+  abs b       = abs <$> b
+  signum b    = signum <$> b
   fromInteger = pure . fromInteger
-  negate b = negate <$> b
+  negate b    = negate <$> b
 
 -- | The @'Monoid'@ instance - similar to the @'Num'@ instance is just a lot of
 --   function applications to the @'Applicative'@ instance.
-instance Monoid a => Monoid (Behavior a) where
+instance (Applicative m, Monoid a) => Monoid (Behavior m a) where
   mempty = pure mempty
 
   mappend ba bb = mappend <$> ba <*> bb
 
--- | Constructing a @'Behavior'@ from a pure function.
-behavior :: (Time -> a) -> Behavior a
-behavior fn = Behavior $ return . fn
+-- | Running a @'Behavior'@ at a given point in time.
+runBehavior :: (Monad m) => Time -> Behavior m a -> m a
+runBehavior t b =
+  case b of
+    (BehaviorM fn) ->          fn t
+    (BehaviorP fn) -> return $ fn t
 
 -- | Getting the amount of seconds that have passed.
-seconds :: Behavior Int
-seconds = behavior floor
+seconds :: Behavior m Int
+seconds = BehaviorP floor
 
 -- | Taking the integral of a @'Fractional'@ value over time, contained inside
 --   of a @'Behavior'@.
-integral :: Real a => a -> Behavior Double
+integral :: (Monad m, Real a) => a -> Behavior m Double
 integral n =
-  Behavior $ \t ->
+  BehaviorM $ \t ->
     return (realToFrac n * t)

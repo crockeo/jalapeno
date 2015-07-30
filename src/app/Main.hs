@@ -11,7 +11,7 @@ import FRP.Jalapeno
 -- Code --
 
 -- | A single axis of speed.
-axisSpeed :: Enum a => a -> a -> Float -> Behavior Float
+axisSpeed :: Enum a => a -> a -> Float -> Behavior IO Float
 axisSpeed posKey minKey speed =
   axisSpeed' <$> keyPressed posKey
              <*> keyPressed minKey
@@ -22,21 +22,21 @@ axisSpeed posKey minKey speed =
         axisSpeed'     _     _ speed =      0
 
 -- | The current speed of the player.
-speed :: Behavior (Float, Float)
+speed :: Behavior IO (Float, Float)
 speed = (,) <$> axisSpeed (CharKey 'W') (CharKey 'S') 30
             <*> axisSpeed (CharKey 'D') (CharKey 'A') 30
 
 -- | The current acceleration of the player.
-acceleration :: Behavior (Float, Float)
+acceleration :: Behavior IO (Float, Float)
 acceleration = undefined
 
 -- | The current position of the player.
-position :: Behavior (Float, Float)
+position :: Behavior IO (Float, Float)
 position = undefined
 
 -- | A @'Behavior'@ to test the properties of @'integral'@ (to make sure it
 --   works properly).
-tspeed :: Behavior Double
+tspeed :: Behavior IO Double
 tspeed = fmap (\pressed -> case pressed of
                              True  -> 20
                              False -> 0) $ keyPressed (CharKey 'W')
