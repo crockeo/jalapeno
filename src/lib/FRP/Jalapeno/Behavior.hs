@@ -32,6 +32,14 @@ instance Applicative m => Applicative (Behavior m) where
     BehaviorP $ \t ->
       fn t (a t)
 
+  (BehaviorM fn) <*> (BehaviorP a) =
+    BehaviorM $ \t ->
+      fn t <*> pure (a t)
+
+  (BehaviorP fn) <*> (BehaviorM a) =
+    BehaviorM $ \t ->
+      fn t <$> a t
+
 instance Monad m => Monad (Behavior m) where
   return a = BehaviorP $ \_ -> a
 
@@ -45,8 +53,8 @@ instance Monad m => Monad (Behavior m) where
   (BehaviorP a) >>= fn =
     BehaviorM $ \t -> do
       case fn $ a t of
-        (BehaviorM b) -> undefined
-        (BehaviorP b) -> undefined
+        (BehaviorM b) ->          b t
+        (BehaviorP b) -> return $ b t
 
 
 instance MonadIO m => MonadIO (Behavior m) where
