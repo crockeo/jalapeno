@@ -94,3 +94,9 @@ integral :: (Monad m, Real a) => a -> Behavior m Double
 integral n =
   BehaviorP $ \t ->
     realToFrac n * t
+
+-- | Trying to perform @'integral'@ in such a way that would perform stateful
+--   integration.
+integralM :: (Monad m, Real a) => Behavior m a -> Behavior m Double
+integralM (BehaviorP a) = BehaviorP $ \t -> realToFrac (a t) * t
+integralM (BehaviorM a) = undefined -- TODO
