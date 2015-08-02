@@ -21,26 +21,37 @@ axisSpeed posKey minKey speed =
         axisSpeed' False  True speed = -speed
         axisSpeed'     _     _ speed =      0
 
--- | The current speed of the player.
-speed :: Behavior IO (Float, Float)
-speed = (,) <$> axisSpeed (CharKey 'W') (CharKey 'S') 30
-            <*> axisSpeed (CharKey 'D') (CharKey 'A') 30
+-- | Finding the position on a given axis by the current speed of acceleration
+--   or deceleration.
+axisPosition :: Enum a => a -> a -> Float -> Behavior IO Double
+axisPosition posKey minKey speed =
+  integral $
+    integral $
+      axisSpeed posKey minKey speed
 
--- | The current acceleration of the player.
-acceleration :: Behavior IO (Float, Float)
-acceleration = undefined
+-- | Finding the X & Y position of the user.
+position :: Float -> Behavior IO (Double, Double)
+position speed = do
+  (,) <$> axisPosition (CharKey 'D') (CharKey 'A') speed
+      <*> axisPosition (CharKey 'W') (CharKey 'S') speed
+  {-x <- axisPosition (CharKey 'D') (CharKey 'A') speed-}
+  {-y <- axisPosition (CharKey 'W') (CharKey 'S') speed-}
 
--- | The current position of the player.
-position :: Behavior IO (Float, Float)
-position = undefined
+  {-return (x, y)-}
 
--- | A @'Behavior'@ to test the properties of @'integral'@ (to make sure it
---   works properly).
-tspeed :: Behavior IO Double
-tspeed = fmap (\pressed -> case pressed of
-                             True  -> 20
-                             False -> 0) $ keyPressed (CharKey 'W')
+{-
+
+axisPosition (CharKey 'D') (CharKey 'A') speed >>= (\x ->
+axisPosition (CharKey 'W') (CharKey 'S') speed >>= (\y ->
+return (x, y)))
+
+-}
+
+-- ... desugars to:
+{-mx >>= (\x ->-}
+{-my >>= (\y ->-}
+{-z ))-}
 
 -- | The entry point to the application.
 main :: IO ()
-main = runNetwork (integral tspeed) 20
+main = runNetwork (position 50) 20
