@@ -98,5 +98,11 @@ integral n =
 -- | Trying to perform @'integral'@ in such a way that would perform stateful
 --   integration.
 integralM :: (Monad m, Real a) => Behavior m a -> Behavior m Double
-integralM (BehaviorP a) = BehaviorP $ \t -> realToFrac (a t) * t
-integralM (BehaviorM a) = undefined -- TODO
+integralM   (BehaviorP a) = BehaviorP $ \t -> realToFrac (a t) * t
+integralM b@(BehaviorM a) =
+  integralM' 0 b
+  where integralM' :: (Monad m, Real a) => Double -> Behavior m a -> Behavior m Double
+        integralM' lt (BehaviorM a) =
+          BehaviorM $ \t -> do
+            av <- a t
+            return $ realToFrac av * (t - lt)
