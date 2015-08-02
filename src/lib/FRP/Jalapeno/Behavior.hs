@@ -1,5 +1,9 @@
 -- | The module containing information on the @'Behavior'@ type.
-module FRP.Jalapeno.Behavior where
+module FRP.Jalapeno.Behavior ( Time
+                             , Behavior (..)
+                             , runBehavior
+                             , integral
+                             ) where
 
 -------------
 -- Imports --
@@ -10,55 +14,67 @@ import Data.Monoid
 ----------
 -- Code --
 
+-- | Mapping a function onto a tuple of a value and a functor of that value.
+--   Used in the @'Applicative'@ instance a number of times.
+mapTuple :: Functor f => (a -> b) -> (a, f a) -> (b, f b)
+mapTuple fn (a, fa) = (fn a, fmap fn fa)
+
 -- | A placeholder for the continuous value of time later to come.
 type Time = Double
 
 -- | A continuous behavior along a stream of time.
-data Behavior m a = BehaviorM (Time -> m a)
-                  | BehaviorP (Time ->   a)
+data Behavior m a = BehaviorM (Time -> m (a, Behavior m a))
+                  | BehaviorP (Time ->   (a, Behavior m a))
 
 instance Functor m => Functor (Behavior m) where
-  fmap fn (BehaviorM a) = BehaviorM $ \t -> fmap fn (a t)
-  fmap fn (BehaviorP a) = BehaviorP $ \t ->      fn (a t)
+  fmap fn (BehaviorM a) =
+    BehaviorM $ \t ->
+      fmap (\(v, b) -> (fn v, fmap fn b)) (a t)
+
+  fmap fn (BehaviorP a) =
+    BehaviorP $ \t ->
+           (\(v, b) -> (fn v, fmap fn b)) (a t)
 
 instance Applicative m => Applicative (Behavior m) where
-  pure a = BehaviorP $ \_ -> a
+  pure a = BehaviorP $ \_ -> (a, pure a)
 
   (BehaviorM fn) <*> (BehaviorM a) =
     BehaviorM $ \t ->
-      fn t <*> a t
+      mapTuple <$> fmap fst (fn t) <*> a t
 
   (BehaviorP fn) <*> (BehaviorP a) =
     BehaviorP $ \t ->
-      fn t (a t)
+      mapTuple (fst $ fn t) (a t)
 
   (BehaviorM fn) <*> (BehaviorP a) =
     BehaviorM $ \t ->
-      fn t <*> pure (a t)
+      mapTuple <$> fmap fst (fn t) <*> pure (a t)
 
   (BehaviorP fn) <*> (BehaviorM a) =
     BehaviorM $ \t ->
-      fn t <$> a t
+      mapTuple <$> pure (fst $ fn t) <*> a t
 
 instance Monad m => Monad (Behavior m) where
-  return a = BehaviorP $ \_ -> a
+  return a = BehaviorP $ \_ -> (a, return a)
 
   (BehaviorM a) >>= fn =
     BehaviorM $ \t -> do
-      av <- a t
+      (av, _) <- a t
       case fn av of
         (BehaviorM b) ->          b t
         (BehaviorP b) -> return $ b t
 
   (BehaviorP a) >>= fn =
     BehaviorM $ \t -> do
-      case fn $ a t of
-        (BehaviorM b) ->          b t
-        (BehaviorP b) -> return $ b t
-
+      let (av, _) = a t in
+        case fn av of
+          (BehaviorM b) ->          b t
+          (BehaviorP b) -> return $ b t
 
 instance MonadIO m => MonadIO (Behavior m) where
-  liftIO a = BehaviorM $ \t -> liftIO a
+  liftIO a =
+    BehaviorM $ \t ->
+      liftIO a >>= return . (flip (,)) (liftIO a)
 
 -- | The @'Num'@ instance is really just a bunch of the appropriate function
 --   applications to the @'Applicative'@ instance.
@@ -78,31 +94,23 @@ instance (Applicative m, Monoid a) => Monoid (Behavior m a) where
   mappend ba bb = mappend <$> ba <*> bb
 
 -- | Running a @'Behavior'@ at a given point in time.
-runBehavior :: (Monad m) => Time -> Behavior m a -> m a
+runBehavior :: Monad m => Time -> Behavior m a -> m (a, Behavior m a)
 runBehavior t b =
   case b of
     (BehaviorM fn) ->          fn t
     (BehaviorP fn) -> return $ fn t
 
--- | Getting the amount of seconds that have passed.
-seconds :: Behavior m Int
-seconds = BehaviorP floor
-
--- | Taking the integral of a @'Fractional'@ value over time, contained inside
---   of a @'Behavior'@.
-integral :: (Monad m, Real a) => a -> Behavior m Double
-integral n =
+-- | Taking the integral of a given @'Behavior'@ over time.
+integral :: (Monad m, Real a) => Behavior m a -> Behavior m Double
+integral   (BehaviorP a) =
   BehaviorP $ \t ->
-    realToFrac n * t
-
--- | Trying to perform @'integral'@ in such a way that would perform stateful
---   integration.
-integralM :: (Monad m, Real a) => Behavior m a -> Behavior m Double
-integralM   (BehaviorP a) = BehaviorP $ \t -> realToFrac (a t) * t
-integralM b@(BehaviorM a) =
-  integralM' 0 b
-  where integralM' :: (Monad m, Real a) => Double -> Behavior m a -> Behavior m Double
-        integralM' lt (BehaviorM a) =
+    case a t of
+      (av, ab) -> (realToFrac av * t, integral ab)
+integral b@(BehaviorM a) =
+  integral' 0 0 b
+  where integral' :: (Monad m, Real a) => Time -> Double -> Behavior m a -> Behavior m Double
+        integral' lt lv (BehaviorM a) =
           BehaviorM $ \t -> do
-            av <- a t
-            return $ realToFrac av * (t - lt)
+            (av, ab) <- a t
+            let nv = lv + realToFrac av * (t - lt) in
+              return (nv, integral' t nv ab)

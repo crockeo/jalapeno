@@ -36,7 +36,8 @@ driveNetwork closedRef b rate = do
             True  -> return ()
             False -> do
               clear [ColorBuffer, DepthBuffer]
-              runBehavior t b >>= print
+              (v, next) <- runBehavior t b
+              print v
               swapBuffers
 
               pollEvents
@@ -47,7 +48,7 @@ driveNetwork closedRef b rate = do
               driveNetwork' ct
                           (t + (fromRational $ toRational $ diffUTCTime ct lt))
                           closedRef
-                          b
+                          next
                           rate
 
 -- | Running a given behavior at a given rate (after having constructed a GLFW

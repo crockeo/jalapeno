@@ -43,4 +43,4 @@ tspeed = fmap (\pressed -> case pressed of
 
 -- | The entry point to the application.
 main :: IO ()
-main = runNetwork (integralM tspeed) 20
+main = runNetwork (integral tspeed) 20
