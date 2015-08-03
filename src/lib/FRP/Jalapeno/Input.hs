@@ -13,4 +13,4 @@ import FRP.Jalapeno.Behavior
 
 -- | Determining whether if given key is pressed - wrapped in a @'Behavior'@.
 keyPressed :: (MonadIO m, Enum a) => a -> Behavior m Bool
-keyPressed = liftIO . fmap (== Press) . getKey
+keyPressed = ioBehavior . fmap (== Press) . getKey

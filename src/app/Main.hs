@@ -31,26 +31,9 @@ axisPosition posKey minKey speed =
 
 -- | Finding the X & Y position of the user.
 position :: Float -> Behavior IO (Double, Double)
-position speed = do
+position speed =
   (,) <$> axisPosition (CharKey 'D') (CharKey 'A') speed
       <*> axisPosition (CharKey 'W') (CharKey 'S') speed
-  {-x <- axisPosition (CharKey 'D') (CharKey 'A') speed-}
-  {-y <- axisPosition (CharKey 'W') (CharKey 'S') speed-}
-
-  {-return (x, y)-}
-
-{-
-
-axisPosition (CharKey 'D') (CharKey 'A') speed >>= (\x ->
-axisPosition (CharKey 'W') (CharKey 'S') speed >>= (\y ->
-return (x, y)))
-
--}
-
--- ... desugars to:
-{-mx >>= (\x ->-}
-{-my >>= (\y ->-}
-{-z ))-}
 
 -- | The entry point to the application.
 main :: IO ()
