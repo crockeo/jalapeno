@@ -94,8 +94,15 @@ instance Monad m => Arrow (Behavior t m) where
     BehaviorP $ \t i ->
       (fn i, arr fn)
 
-  first (BehaviorM fn) = undefined
-  first (BehaviorP fn) = undefined
+  first (BehaviorM fn) =
+    BehaviorM $ \t (b, d) -> do
+      (c, cb) <- fn t b
+      return ((c, d), first cb)
+
+  first (BehaviorP fn) =
+    BehaviorP $ \t (b, d) ->
+      let (c, cb) = fn t b in
+        ((c, d), first cb)
 
 -- | The @'Num'@ instance is really just a bunch of the appropriate function
 --   applications to the @'Applicative'@ instance.
