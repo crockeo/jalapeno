@@ -25,18 +25,18 @@ closeCallback closedRef = do
   return True
 
 -- | Running a given FRP network from some @'Behavior'@.
-driveNetwork :: Show a => IORef Bool -> Behavior IO a -> Int -> IO ()
+driveNetwork :: Show a => IORef Bool -> Behavior Double IO () a -> Int -> IO ()
 driveNetwork closedRef b rate = do
   ct <- getCurrentTime
   driveNetwork' ct 0 closedRef b rate
-  where driveNetwork' :: Show a => UTCTime -> Double -> IORef Bool -> Behavior IO a -> Int -> IO ()
+  where driveNetwork' :: Show a => UTCTime -> Double -> IORef Bool -> Behavior Double IO () a -> Int -> IO ()
         driveNetwork' lt t closedRef b rate = do
           closed <- readIORef closedRef
           case closed of
             True  -> return ()
             False -> do
               clear [ColorBuffer, DepthBuffer]
-              (v, next) <- runBehavior t b
+              (v, next) <- runBehavior t () b
               print v
               swapBuffers
 
@@ -53,7 +53,7 @@ driveNetwork closedRef b rate = do
 
 -- | Running a given behavior at a given rate (after having constructed a GLFW
 --   instance).
-runNetwork :: Show a => Behavior IO a -> Int -> IO ()
+runNetwork :: Show a => Behavior Double IO () a -> Int -> IO ()
 runNetwork b rate = do
   succ <- initialize
 
