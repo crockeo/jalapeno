@@ -3,34 +3,38 @@ module Main where
 
 -------------
 -- Imports --
+import Prelude hiding ((.))
 import Control.Applicative
 import Graphics.UI.GLFW
+import Control.Category
 import FRP.Jalapeno
 
 ----------
 -- Code --
 
--- | A single axis of speed.
-axisSpeed :: Enum a => a -> a -> Float -> Behavior IO Float
-axisSpeed posKey minKey speed =
-  axisSpeed' <$> keyPressed posKey
-             <*> keyPressed minKey
-             <*> pure speed
-  where axisSpeed' :: Bool -> Bool -> Float -> Float
-        axisSpeed'  True False speed =  speed
-        axisSpeed' False  True speed = -speed
-        axisSpeed'     _     _ speed =      0
+-- | Checking if a tuple of keys to go positive and negative in a wire are
+--   pressed.
+keysPressed :: Enum a => a -> a -> Behavior Double IO () (Bool, Bool)
+keysPressed posKey minKey =
+  (,) <$> keyPressed posKey
+      <*> keyPressed minKey
 
--- | Finding the position on a given axis by the current speed of acceleration
---   or deceleration.
-axisPosition :: Enum a => a -> a -> Float -> Behavior IO Double
+-- | A single axis of speed.
+axisSpeed :: Float -> Behavior Double IO (Bool, Bool) Float
+axisSpeed speed =
+  BehaviorP $ \_ p ->
+    case p of
+      ( True, False) -> ( speed, axisSpeed speed)
+      (False,  True) -> (-speed, axisSpeed speed)
+      _              -> (     0, axisSpeed speed)
+
+-- | The position on a given axis.
+axisPosition :: Enum a => a -> a -> Float -> Behavior Double IO () Double
 axisPosition posKey minKey speed =
-  integral $
-    integral $
-      axisSpeed posKey minKey speed
+  integral $ integral $ axisSpeed speed . keysPressed posKey minKey
 
 -- | Finding the X & Y position of the user.
-position :: Float -> Behavior IO (Double, Double)
+position :: Float -> Behavior Double IO () (Double, Double)
 position speed =
   (,) <$> axisPosition (CharKey 'D') (CharKey 'A') speed
       <*> axisPosition (CharKey 'W') (CharKey 'S') speed
