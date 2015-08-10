@@ -14,14 +14,19 @@ cabal-version:       >= 1.10
 
 library
   exposed-modules: FRP.Jalapeno
+                 , FRP.Jalapeno.Assets
+                 , FRP.Jalapeno.Assets.Shader
                  , FRP.Jalapeno.Behavior
                  , FRP.Jalapeno.Input
                  , FRP.Jalapeno.IO
                  , FRP.Jalapeno.Sample
 
   build-depends:   base         >= 4.6 && < 4.8
+               ,   directory    == 1.2.1.0
                ,   GLFW         == 0.5.2.2
+               ,   JuicyPixels  == 3.2.2
                ,   OpenGL       == 2.9.2.0
+               ,   OpenGLRaw    == 1.5.0.0
                ,   time         == 1.4.2
                ,   transformers == 0.3.0.0
 

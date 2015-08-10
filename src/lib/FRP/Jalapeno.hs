@@ -1,5 +1,6 @@
 -- | A central module to re-export a number of other modules within the library.
-module FRP.Jalapeno ( module FRP.Jalapeno.Behavior
+module FRP.Jalapeno ( module FRP.Jalapeno.Assets
+                    , module FRP.Jalapeno.Behavior
                     , module FRP.Jalapeno.Input
                     , module FRP.Jalapeno.IO
                     , module FRP.Jalapeno.Sample
@@ -11,6 +12,7 @@ module FRP.Jalapeno ( module FRP.Jalapeno.Behavior
 
 -------------
 -- Imports --
+import FRP.Jalapeno.Assets
 import FRP.Jalapeno.Behavior
 import FRP.Jalapeno.Input
 import FRP.Jalapeno.IO

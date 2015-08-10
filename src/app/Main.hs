@@ -1,4 +1,5 @@
 -- | The entry point to testing this library.
+{-# LANGUAGE Arrows #-}
 module Main where
 
 -------------
