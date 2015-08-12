@@ -10,8 +10,10 @@ import Graphics.Rendering.OpenGL.Raw
 import Foreign.Marshal.Alloc
 import Foreign.StablePtr
 import Foreign.C.String
+import Foreign.Storable
 import System.Directory
 import Control.Monad
+import Foreign.Ptr
 import GHC.Ptr
 
 ----------
@@ -19,6 +21,7 @@ import GHC.Ptr
 
 -- | A wrapper around a @'GLuint'@ to be clear that this is an OpenGL shader.
 newtype ShaderProgram = ShaderProgram GLuint
+  deriving (Eq, Show, Read)
 
 -- | Reading in the contents of a file and storing them inside the appropriate
 --   form for creating a shader.
@@ -51,16 +54,16 @@ loadShader path shaderType = do
       glCompileShader sid
       freeShaderContents contents
 
-      -- TODO: Get compile status.
+      -- TODO: Add error logging instead of a binary pass or fail.
+      alloca $ \pCompiled -> do
+        glGetShaderiv sid gl_COMPILE_STATUS pCompiled
+        compiled <- peek pCompiled
 
-      return sid
-
--- | A @'GLenum'@ value for each of a vertex shader, a geometry shader, and a
---   fragment shader.
-vertexShader, geometryShader, fragmentShader :: GLenum
-vertexShader   = 35633
-geometryShader = 36313
-fragmentShader = 35632
+        case compiled of
+          gl_TRUE  -> return sid
+          _        -> do
+            glDeleteShader sid
+            return 0
 
 -- | Performing some piece of @'IO'@ on a list of @'GLuint'@ so long as that
 --   value is not 0.
@@ -74,22 +77,22 @@ shaderAction (n:xs) action = action n >> shaderAction xs action
 --   and p.frag respectively.
 loadShaderProgram :: FilePath -> IO (Either String ShaderProgram)
 loadShaderProgram path = do
-  vert <- loadShader (path ++ ".vert") vertexShader
-  geom <- loadShader (path ++ ".geom") geometryShader
-  frag <- loadShader (path ++ ".frag") fragmentShader
+  vert <- loadShader (path ++ ".vert") gl_VERTEX_SHADER
+  geom <- loadShader (path ++ ".geom") gl_GEOMETRY_SHADER
+  frag <- loadShader (path ++ ".frag") gl_FRAGMENT_SHADER
 
-  case (vert, geom, frag) of
-    (0, 0, 0) -> return $ Left "No shaders were loaded."
-    (v, g, f) -> do
+  case [vert, geom, frag] of
+    [0, 0, 0] -> return $ Left "No shaders were loaded."
+    ss        -> do
       spid <- glCreateProgram
 
-      shaderAction [v, g, f] $ glAttachShader spid
+      shaderAction ss $ glAttachShader spid
 
       withCString "out_color" $ \cStr ->
         glBindFragDataLocation spid 0 cStr
       glLinkProgram spid
 
-      shaderAction [v, g, f] glDeleteShader
+      shaderAction ss glDeleteShader
 
       -- TODO: Get link status
 
