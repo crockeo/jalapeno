@@ -4,6 +4,7 @@ module FRP.Jalapeno.IO where
 
 -------------
 -- Imports --
+import Graphics.Rendering.OpenGL.Raw
 import Graphics.Rendering.OpenGL
 import Control.Monad.IO.Class
 import Control.Concurrent
@@ -12,6 +13,7 @@ import Data.Time.Clock
 import Data.IORef
 
 import FRP.Jalapeno.Behavior
+import FRP.Jalapeno.Assets
 import FRP.Jalapeno.Sample
 
 ----------
@@ -69,7 +71,14 @@ runNetwork b rate = do
       windowTitle         $= "Testing Jalapeno"
       windowCloseCallback $= closeCallback closedRef
 
+      sp <- loadShaderProgram "test" >>=
+              (\e -> case e of
+                       Left  err               -> putStrLn err >> return 0
+                       Right (ShaderProgram v) -> return v)
+
       driveNetwork closedRef b rate
+
+      glDeleteProgram sp
 
       closeWindow
       terminate

@@ -60,8 +60,8 @@ loadShader path shaderType = do
         compiled <- peek pCompiled
 
         case compiled of
-          gl_TRUE  -> return sid
-          _        -> do
+          gl_TRUE -> return sid
+          _       -> do
             glDeleteShader sid
             return 0
 
@@ -94,6 +94,12 @@ loadShaderProgram path = do
 
       shaderAction ss glDeleteShader
 
-      -- TODO: Get link status
+      alloca $ \pLinked -> do
+        glGetProgramiv spid gl_LINK_STATUS pLinked
+        linked <- peek pLinked
 
-      return $ Right $ ShaderProgram spid
+        case linked of
+          gl_TRUE -> return $ Right $ ShaderProgram spid
+          _       -> do
+            glDeleteProgram spid
+            return $ Left "Failed to link shader program."
